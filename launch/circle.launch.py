@@ -12,11 +12,11 @@ def generate_launch_description():
     xacro_file = os.path.join(pkg, 'urdf', 'diff_drive_robot.xacro')
     ld = LaunchDescription()
 
-    num_of_robots = 7
+    num_of_robots = 5
     rand = random.sample(range(100), num_of_robots)
     x = [(num // 10) * 2 - 9 for num in rand]
     y = [(num % 10) * 2 - 9 for num in rand]
-    spawn_position = [[x[i], y[i], 0.3] for i in range(num_of_robots)]
+    spawn_position = [[x[i], y[i], 0.0] for i in range(num_of_robots)]
 
     gazebo = ExecuteProcess(
         cmd=['gazebo', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so'],
@@ -35,7 +35,7 @@ def generate_launch_description():
 
         spawn_entity = Node(
             package='gazebo_ros', executable='spawn_entity.py',
-            arguments=['-entity', 'robot'+str(i),
+            arguments=['-entity', 'robot_' + str(i),
                     '-topic', 'robot_' + str(i) + '/robot_description',
                     '-x', str(spawn_position[i][0]),
                     '-y', str(spawn_position[i][1]),
