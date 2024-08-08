@@ -9,14 +9,14 @@ using std::placeholders::_1;
 
 const double tolerance = 0.1;     // angle tolerance
 const double center[2] = {0.0, 0.0};
-const double radius = 5.0;
+const double radius = 3.0;
 
 class Robot
 {
 public:
     double x;
     double y;
-    double facing;  // [-pi, pi]
+    double yaw;  // [-pi, pi]
     int id;     // 0 1 2 ...
     std::string name;   // "robot_0", "robot_1" ...
     double phi;
@@ -25,7 +25,7 @@ public:
     {
         this->x = 0.0;
         this->y = 0.0;
-        this->facing = 0.0;
+        this->yaw = 0.0;
         this->id = id;
         this->name = name;
     }
@@ -36,8 +36,10 @@ public:
         this->x = odom->pose.pose.position.x;
         this->y = odom->pose.pose.position.y;
         double w = odom->pose.pose.orientation.w;
+        double x = odom->pose.pose.orientation.x;
+        double y = odom->pose.pose.orientation.y;
         double z = odom->pose.pose.orientation.z;
-        this->facing = 2 * atan2(z, w);
+        this->yaw = atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
     }
 };
 
@@ -55,7 +57,7 @@ class SteeringNode: public rclcpp::Node
 {
 private:
     std::vector<rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr> vel_pubs;  // vector of cmd_vel publishers
-    std::vector<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> odom_subs;
+    std::vector<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> odom_subs;    // vector of odometry subscribers
     rclcpp::CallbackGroup::SharedPtr odom_call_back_group;  // callback group of odometry subscriptions
 
 public:
@@ -95,7 +97,7 @@ public:
         msg.angular.z = w;
         msg.angular.x = msg.angular.y = 0.0;
         this->vel_pubs[probot->id]->publish(msg);
-        RCLCPP_INFO(this->get_logger(), "Published v=%g w=%g to %s in x=%g, y=%g", v, w, probot->name.c_str(), probot->x, probot->y);
+        RCLCPP_INFO(this->get_logger(), "Published v=%g w=%g to %s at x=%g, y=%g", v, w, probot->name.c_str(), probot->x, probot->y);
     }
 
     void counterclockwise_sort()
@@ -124,11 +126,11 @@ int main(int argc, char *const *argv)
     double *d = new double[num];
     for(int i = 0; i < num; i++) d[i] = 2*PI/num;
     rclcpp::spin_some(pnode);
-    pnode->counterclockwise_sort();
-    RCLCPP_INFO(pnode->get_logger(), "Sorting finished");
-    const double k = PI-1.75, C1 = 1.0, C2 = 1.0;
+    const double k = PI-1.75, C1 = 2.0, C2 = 1.0;
+    int frame = 0;
     while(rclcpp::ok())
     {
+        if(frame % 30 == 0) pnode->counterclockwise_sort();
         rclcpp::spin_some(pnode);
         for(int i = 0; i < num; i++)
         {
@@ -139,17 +141,18 @@ int main(int argc, char *const *argv)
         for(int i = 0; i < num; i++)
         {
             int i_plus = (i + 1) % num;
-            int i_sub = (i - 1) % num;
+            int i_sub = (i - 1 + num) % num;
             double beta = phi[i_plus] - phi[i];
             if(beta < -tolerance) beta += 2*PI;
             double beta_sub = phi[i] - phi[i_sub];
-            if(beta_sub < -tolerance) beta += 2*PI;
-            double alpha = pnode->robots[i]->facing - phi[i];
+            if(beta_sub < -tolerance) beta_sub += 2*PI;
+            double alpha = pnode->robots[i]->yaw - phi[i];
 
             double v = C1 + C2/(2*PI) * (d[i_sub]*beta-d[i]*beta_sub)/(d[i]+d[i_sub]);
             double w = (k * cos(alpha) + v) / radius;
             pnode->pub_vel(pnode->robots[i], v, w);
         }
+        frame++;
         rate.sleep();
     }
 

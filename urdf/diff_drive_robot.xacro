@@ -216,7 +216,7 @@
             <wheel_diameter>${wheel_radius * 2}</wheel_diameter>
             <!-- limits -->
             <max_wheel_torque>200</max_wheel_torque>
-            <max_wheel_acceleration>5.0</max_wheel_acceleration>
+            <max_wheel_acceleration>10.0</max_wheel_acceleration>
             <!-- output -->
             <publish_odom>true</publish_odom>
             <publish_odom_tf>false</publish_odom_tf>

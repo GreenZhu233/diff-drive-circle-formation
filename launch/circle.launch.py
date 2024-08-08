@@ -33,6 +33,7 @@ def generate_launch_description():
         )
         ld.add_action(robot_state_publisher)
 
+        random_yaw = random.uniform(0, 2 * 3.14159265359)
         spawn_entity = Node(
             package='gazebo_ros', executable='spawn_entity.py',
             arguments=['-entity', 'robot_' + str(i),
@@ -40,7 +41,7 @@ def generate_launch_description():
                     '-x', str(spawn_position[i][0]),
                     '-y', str(spawn_position[i][1]),
                     '-z', str(spawn_position[i][2]),
-                    '-Y', '0.0'],
+                    '-Y', str(random_yaw)],
             output='screen',
             )
         ld.add_action(spawn_entity)
