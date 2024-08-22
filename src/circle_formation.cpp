@@ -126,17 +126,16 @@ int main(int argc, char *const *argv)
     double *d = new double[num];
     for(int i = 0; i < num; i++) d[i] = 2*PI/num;
     rclcpp::spin_some(pnode);
-    const double k = PI-1.75, C1 = 2.0, C2 = 1.0;
-    int frame = 0;
+    const double k = 4.0, C1 = 2.0, C2 = 1.5, C3 = 0.7;
+    pnode->counterclockwise_sort();
     while(rclcpp::ok())
     {
-        if(frame % 30 == 0) pnode->counterclockwise_sort();
         rclcpp::spin_some(pnode);
         for(int i = 0; i < num; i++)
         {
             p_bar[i][0] = pnode->robots[i]->x - center[0];
             p_bar[i][1] = pnode->robots[i]->y - center[1];
-            phi[i] = atan2(pnode->robots[i]->y, pnode->robots[i]->x);
+            phi[i] = atan2(p_bar[i][1], p_bar[i][0]);
         }
         for(int i = 0; i < num; i++)
         {
@@ -149,10 +148,22 @@ int main(int argc, char *const *argv)
             double alpha = pnode->robots[i]->yaw - phi[i];
 
             double v = C1 + C2/(2*PI) * (d[i_sub]*beta-d[i]*beta_sub)/(d[i]+d[i_sub]);
+
+            // collision avoidance
+            double r = sqrt(p_bar[i][0]*p_bar[i][0] + p_bar[i][1]*p_bar[i][1]);
+            double phi_dot = v * sin(alpha) / r;
+            if(phi_dot > 0)
+            {
+                if(phi_dot > C3 * beta) v *= C3 * beta / phi_dot;
+            }
+            else if(phi_dot < 0)
+            {
+                if(phi_dot < -C3 * beta_sub) v *= C3 * beta_sub / phi_dot;
+            }
+
             double w = (k * cos(alpha) + v) / radius;
             pnode->pub_vel(pnode->robots[i], v, w);
         }
-        frame++;
         rate.sleep();
     }
 
