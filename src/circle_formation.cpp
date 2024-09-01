@@ -32,7 +32,6 @@ public:
 
     void odom_callback(const nav_msgs::msg::Odometry::SharedPtr odom)
     {
-        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Odom callback called");
         this->x = odom->pose.pose.position.x;
         this->y = odom->pose.pose.position.y;
         double w = odom->pose.pose.orientation.w;
@@ -97,7 +96,7 @@ public:
         msg.angular.z = w;
         msg.angular.x = msg.angular.y = 0.0;
         this->vel_pubs[probot->id]->publish(msg);
-        RCLCPP_INFO(this->get_logger(), "Published v=%g w=%g to %s at x=%g, y=%g", v, w, probot->name.c_str(), probot->x, probot->y);
+        // RCLCPP_INFO(this->get_logger(), "Published v=%g w=%g to %s at x=%g, y=%g", v, w, probot->name.c_str(), probot->x, probot->y);
     }
 
     void counterclockwise_sort()
