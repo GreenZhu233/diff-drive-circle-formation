@@ -2,14 +2,14 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include <string>
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 using std::placeholders::_1;
 #define PI 3.1415926535897932
 
 const double tolerance = 0.1;     // angle tolerance
-const double center[2] = {0.0, 0.0};
-const double radius = 3.0;
+double center[2] = {0.0, 0.0};
+const double radius = 4.0;
 
 class Robot
 {
@@ -34,11 +34,11 @@ public:
     {
         this->x = odom->pose.pose.position.x;
         this->y = odom->pose.pose.position.y;
-        double w = odom->pose.pose.orientation.w;
-        double x = odom->pose.pose.orientation.x;
-        double y = odom->pose.pose.orientation.y;
-        double z = odom->pose.pose.orientation.z;
-        this->yaw = atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
+        double qw = odom->pose.pose.orientation.w;
+        double qx = odom->pose.pose.orientation.x;
+        double qy = odom->pose.pose.orientation.y;
+        double qz = odom->pose.pose.orientation.z;
+        this->yaw = atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz));
     }
 };
 
@@ -65,7 +65,11 @@ public:
     SteeringNode(const std::string name): Node(name)
     {
         this->declare_parameter<int>("num_of_robots", 5);
+        this->declare_parameter<double>("center_x", 0.0);
+        this->declare_parameter<double>("center_y", 0.0);
         this->get_parameter("num_of_robots", this->num_of_robots);
+        this->get_parameter("center_x", center[0]);
+        this->get_parameter("center_y", center[1]);
         this->robots.resize(this->num_of_robots);
         this->vel_pubs.resize(this->num_of_robots);
         this->odom_subs.resize(this->num_of_robots);
