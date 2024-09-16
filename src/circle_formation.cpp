@@ -75,7 +75,7 @@ public:
 
         for(int i = 0; i < this->num_of_robots; i++)
         {
-            this->robots[i] = std::make_shared<Robot>(i, std::string("robot_") + std::to_string(i));
+            this->robots[i] = std::make_shared<Robot>(i, std::string("ddrobot_") + std::to_string(i));
             auto probot = this->robots[i];
             this->vel_pubs[i] = this->create_publisher<geometry_msgs::msg::Twist>(probot->name+std::string("/cmd_vel"), 10);
             this->odom_subs[i] = this->create_subscription<nav_msgs::msg::Odometry>(

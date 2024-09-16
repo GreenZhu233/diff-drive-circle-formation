@@ -24,11 +24,11 @@ def generate_launch_description():
     ld.add_action(gazebo)
 
     for i in range(num_of_robots):
-        doc = xacro.process_file(xacro_file, mappings={'namespace':'robot_'+str(i)})
+        doc = xacro.process_file(xacro_file, mappings={'namespace':'ddrobot_'+str(i)})
         robot_state_publisher = Node(
             package='robot_state_publisher', executable='robot_state_publisher',
             output='screen',
-            namespace='robot_'+str(i),
+            namespace='ddrobot_'+str(i),
             parameters=[{'use_sim_time': True, 'robot_description': doc.toxml()}]
         )
         ld.add_action(robot_state_publisher)
@@ -36,8 +36,8 @@ def generate_launch_description():
         random_yaw = random.uniform(0, 2 * 3.14159265359)
         spawn_entity = Node(
             package='gazebo_ros', executable='spawn_entity.py',
-            arguments=['-entity', 'robot_' + str(i),
-                    '-topic', 'robot_' + str(i) + '/robot_description',
+            arguments=['-entity', 'ddrobot_' + str(i),
+                    '-topic', 'ddrobot_' + str(i) + '/robot_description',
                     '-x', str(spawn_position[i][0]),
                     '-y', str(spawn_position[i][1]),
                     '-z', str(spawn_position[i][2]),
