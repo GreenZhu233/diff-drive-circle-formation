@@ -70,6 +70,7 @@ public:
         this->get_parameter("num_of_robots", this->num_of_robots);
         this->get_parameter("center_x", center[0]);
         this->get_parameter("center_y", center[1]);
+        RCLCPP_INFO(this->get_logger(), "rotating center of diff drive robots: x=%g, y=%g", center[0], center[1]);
         this->robots.resize(this->num_of_robots);
         this->vel_pubs.resize(this->num_of_robots);
         this->odom_subs.resize(this->num_of_robots);
@@ -110,13 +111,18 @@ public:
             probot->phi = atan2(probot->y - center[1], probot->x - center[0]);
         }
         std::sort(this->robots.begin(), this->robots.end(), cmp);
+        RCLCPP_INFO(this->get_logger(), "sort result of diff drive robots:");
+        for(auto probot:this->robots)
+        {
+            RCLCPP_INFO(this->get_logger(), "robot %s at x=%g, y=%g, phi=%g", probot->name.c_str(), probot->x, probot->y, probot->phi);
+        }
     }
 };
 
 int main(int argc, char *const *argv)
 {
     rclcpp::init(argc, argv);
-    auto pnode = std::make_shared<SteeringNode>("steering_node");
+    auto pnode = std::make_shared<SteeringNode>("ddrobot_steering_node");
 
     sleep(5);
 
