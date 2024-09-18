@@ -101,7 +101,6 @@ public:
         msg.angular.z = w;
         msg.angular.x = msg.angular.y = 0.0;
         this->vel_pubs[probot->id]->publish(msg);
-        // RCLCPP_INFO(this->get_logger(), "Published v=%g w=%g to %s at x=%g, y=%g", v, w, probot->name.c_str(), probot->x, probot->y);
     }
 
     void counterclockwise_sort()
@@ -111,11 +110,6 @@ public:
             probot->phi = atan2(probot->y - center[1], probot->x - center[0]);
         }
         std::sort(this->robots.begin(), this->robots.end(), cmp);
-        RCLCPP_INFO(this->get_logger(), "sort result of diff drive robots:");
-        for(auto probot:this->robots)
-        {
-            RCLCPP_INFO(this->get_logger(), "robot %s at x=%g, y=%g, phi=%g", probot->name.c_str(), probot->x, probot->y, probot->phi);
-        }
     }
 };
 
@@ -182,7 +176,6 @@ int main(int argc, char *const *argv)
                 w += (kp * (r - radius) + ki * loss_r[i] / frame) * v / radius;
             }
             pnode->pub_vel(pnode->robots[i], v, w);
-            RCLCPP_INFO(pnode->get_logger(), "ddrobot_%d's distance to center: %g", i, r);
         }
         rate.sleep();
     }
