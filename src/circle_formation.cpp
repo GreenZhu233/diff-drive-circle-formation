@@ -134,11 +134,14 @@ int main(int argc, char *const *argv)
     double *phi = new double[num];
     double *d = new double[num];
     for(int i = 0; i < num; i++) d[i] = 2*PI/num;
+    double *loss_r = new double[num]{0.0};
     rclcpp::spin_some(pnode);
-    const double k = 4.0, C1 = 2.0, C2 = 1.5, C3 = 0.7;
+    const double k = 4.0, kp = 2.0, ki = 10.0, C1 = 2.0, C2 = 1.5, C3 = 0.7, r0 = 0.5;
     pnode->counterclockwise_sort();
+    int frame = 0;
     while(rclcpp::ok())
     {
+        frame++;
         rclcpp::spin_some(pnode);
         for(int i = 0; i < num; i++)
         {
@@ -171,7 +174,15 @@ int main(int argc, char *const *argv)
             }
 
             double w = (k * cos(alpha) + v) / radius;
+
+            // radius loss decrease
+            if(fabs(r - radius) < r0)
+            {
+                loss_r[i] += r - radius;
+                w += (kp * (r - radius) + ki * loss_r[i] / frame) * v / radius;
+            }
             pnode->pub_vel(pnode->robots[i], v, w);
+            RCLCPP_INFO(pnode->get_logger(), "ddrobot_%d's distance to center: %g", i, r);
         }
         rate.sleep();
     }
