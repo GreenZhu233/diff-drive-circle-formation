@@ -64,10 +64,10 @@ public:
     std::vector<std::shared_ptr<Robot>> robots;
     SteeringNode(const std::string name): Node(name)
     {
-        this->declare_parameter<int>("num_of_robots", 5);
+        this->declare_parameter<int>("num", 5);
         this->declare_parameter<double>("center_x", 0.0);
         this->declare_parameter<double>("center_y", 0.0);
-        this->get_parameter("num_of_robots", this->num_of_robots);
+        this->get_parameter("num", this->num_of_robots);
         this->get_parameter("center_x", center[0]);
         this->get_parameter("center_y", center[1]);
         RCLCPP_INFO(this->get_logger(), "rotating center of diff drive robots: x=%g, y=%g", center[0], center[1]);
