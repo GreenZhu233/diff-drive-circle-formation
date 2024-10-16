@@ -118,8 +118,6 @@ int main(int argc, char *const *argv)
     rclcpp::init(argc, argv);
     auto pnode = std::make_shared<SteeringNode>("ddrobot_steering_node");
 
-    sleep(5);
-
     // start formation
     RCLCPP_INFO(pnode->get_logger(), "Start circle formation");
     rclcpp::Rate rate(30);
