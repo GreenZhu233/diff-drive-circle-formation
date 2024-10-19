@@ -7,7 +7,7 @@
 using std::placeholders::_1;
 #define PI 3.1415926535897932
 
-const double tolerance = 0.1;     // angle tolerance
+const double tolerance = 0.0;     // angle tolerance
 double center[2] = {0.0, 0.0};
 const double radius = 4.0;
 
@@ -25,7 +25,7 @@ public:
     {
         this->x = 0.0;
         this->y = 0.0;
-        this->yaw = 0.0;
+        this->yaw = 10.0;
         this->id = id;
         this->name = name;
     }
@@ -48,7 +48,7 @@ bool cmp(std::shared_ptr<Robot> probot1, std::shared_ptr<Robot> probot2)
     if(probot1->phi - probot2->phi > tolerance) return false;
     double r1 = fabs(probot1->x - center[0]) + fabs(probot1->y - center[1]);
     double r2 = fabs(probot2->x - center[0]) + fabs(probot2->y - center[1]);
-    if(r1 < r2) return true;
+    if(r1 < r2) return false;
     return false;
 }
 
@@ -85,7 +85,7 @@ public:
             this->vel_pubs[i] = this->create_publisher<geometry_msgs::msg::Twist>(probot->name+std::string("/cmd_vel"), 10);
             this->odom_subs[i] = this->create_subscription<nav_msgs::msg::Odometry>(
                 std::string("/") + probot->name + std::string("/odom"),
-                10,
+                1,
                 std::bind(&Robot::odom_callback, probot, _1),
                 options
             );
@@ -127,13 +127,21 @@ int main(int argc, char *const *argv)
     double *d = new double[num];
     for(int i = 0; i < num; i++) d[i] = 2*PI/num;
     double *loss_r = new double[num]{0.0};
-    rclcpp::spin_some(pnode);
-    const double k = 4.0, kp = 2.0, ki = 10.0, C1 = 2.0, C2 = 1.5, C3 = 0.7, r0 = 0.5;
+    while(1)
+    {
+        rclcpp::spin_some(pnode);
+        int odom_get = 0;
+        for(auto probot: pnode->robots)
+        {
+            if(probot->yaw < 4.0) odom_get++;
+        }
+        if(odom_get == num) break;
+    }
+    const double k = 4.0, kp = 2.0, ki = 0.01, C1 = 2.0, C2 = 2.0, r0 = 0.5;
+    const double C3 = 0.7;      // C3 >= C1 * num / (2 * PI * radius)
     pnode->counterclockwise_sort();
-    int frame = 0;
     while(rclcpp::ok())
     {
-        frame++;
         rclcpp::spin_some(pnode);
         for(int i = 0; i < num; i++)
         {
@@ -156,22 +164,20 @@ int main(int argc, char *const *argv)
             // collision avoidance
             double r = sqrt(p_bar[i][0]*p_bar[i][0] + p_bar[i][1]*p_bar[i][1]);
             double phi_dot = v * sin(alpha) / r;
-            if(phi_dot > 0)
-            {
-                if(phi_dot > C3 * beta) v *= C3 * beta / phi_dot;
-            }
-            else if(phi_dot < 0)
-            {
-                if(phi_dot < -C3 * beta_sub) v *= C3 * beta_sub / phi_dot;
-            }
+            if(phi_dot > C3 * beta) v = C3 * beta * r / 2;
+            else if(phi_dot < -C3 * beta_sub) v = C3 * beta_sub * r / 2;
 
             double w = (k * cos(alpha) + v) / radius;
 
             // radius loss decrease
             if(fabs(r - radius) < r0)
             {
-                loss_r[i] += r - radius;
-                w += (kp * (r - radius) + ki * loss_r[i] / frame) * v / radius;
+                loss_r[i] += (r - radius) / 30;
+                w += (kp * (r - radius) + ki * loss_r[i]) * v / radius;
+            }
+            else
+            {
+                loss_r[i] = 0.0;
             }
             pnode->pub_vel(pnode->robots[i], v, w);
         }

@@ -1,6 +1,6 @@
 from launch_ros.substitutions import FindPackageShare
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess
+from launch.actions import ExecuteProcess, TimerAction
 from launch_ros.actions import Node
 import xacro
 import os
@@ -49,8 +49,8 @@ def generate_launch_description():
     circle_formation_node = Node(
         package=package_name, executable='circle_formation_node',
         output='screen',
-        parameters=[{'num': num_of_robots, 'center_x': 5.0, 'center_y': -5.0}]
+        parameters=[{'num': num_of_robots, 'center_x': 0.0, 'center_y': 0.0}]
     )
-    ld.add_action(circle_formation_node)
+    ld.add_action(TimerAction(period=10.0, actions=[circle_formation_node]))
 
     return ld
